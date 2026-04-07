@@ -63,9 +63,12 @@ npm install && npm run dev
 ## File Locations
 - Views: `client/src/views/*.vue`
 - API Client: `client/src/api.js`
-- Backend: `server/main.py`, `server/mock_data.py`
+- Backend: `server/main.py`, `server/mock_data.py`1
 - Data: `server/data/*.json`
 - Styles: `client/src/App.vue`
+
+## Code Style
+- Always document non-obvious logic changes with comments
 
 ## Design System
 - Colors: Slate/gray (#0f172a, #64748b, #e2e8f0)
