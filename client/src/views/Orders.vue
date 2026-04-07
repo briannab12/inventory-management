@@ -46,7 +46,10 @@
             </thead>
             <tbody>
               <tr v-for="order in orders" :key="order.id">
-                <td class="col-order-number"><strong>{{ order.order_number }}</strong></td>
+                <td class="col-order-number">
+                  <strong>{{ order.order_number }}</strong>
+                  <span v-if="order._isRestocking" class="badge restocking-badge">Restocking</span>
+                </td>
                 <td class="col-customer">{{ translateCustomerName(order.customer) }}</td>
                 <td class="col-items">
                   <details class="items-details">
@@ -109,14 +112,17 @@ export default {
       try {
         loading.value = true
         const filters = getCurrentFilters()
-        const fetchedOrders = await api.getOrders(filters)
-
-        // Sort orders by order_date (earliest first)
-        orders.value = fetchedOrders.sort((a, b) => {
-          const dateA = new Date(a.order_date)
-          const dateB = new Date(b.order_date)
-          return dateA - dateB
-        })
+        // Fetch regular orders and restocking orders in parallel
+        const [fetchedOrders, fetchedRestocking] = await Promise.all([
+          api.getOrders(filters),
+          api.getRestockingOrders({ warehouse: filters.warehouse, status: filters.status })
+        ])
+        // Merge, mark restocking orders, sort by order_date descending (most recent first)
+        const merged = [
+          ...fetchedOrders,
+          ...fetchedRestocking.map(ro => ({ ...ro, _isRestocking: true }))
+        ]
+        orders.value = merged.sort((a, b) => new Date(b.order_date) - new Date(a.order_date))
       } catch (err) {
         error.value = 'Failed to load orders: ' + err.message
       } finally {
@@ -180,7 +186,7 @@ export default {
 
 /* Column widths */
 .col-order-number {
-  width: 130px;
+  width: 175px;
 }
 
 .col-customer {
@@ -275,5 +281,14 @@ export default {
 .item-meta {
   font-size: 0.813rem;
   color: #64748b;
+}
+
+.restocking-badge {
+  background: #f3e8ff;
+  color: #6b21a8;
+  margin-left: 0.375rem;
+  font-size: 0.625rem;
+  padding: 0.2rem 0.5rem;
+  vertical-align: middle;
 }
 </style>
